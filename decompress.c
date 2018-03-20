@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
 	fread(hdcopy, length, 1, fp);
 
-	printf("Decoding HD-COPY Image\nInput size = %d, fitting to 1.44MB\n", length);
+	printf("Decoding HD-COPY Image\nInput size = %d\n", length);
 	fclose(fp);
 
 	uint8_t *actualimage;
@@ -106,6 +106,9 @@ int main(int argc, char *argv[])
 			payload += dataLen;
 		}
 	}
+	uint16_t secCount = plain[0x13] + (plain[0x14] << 8);
+	printf("Floppy sector count = %d, fitting to %d bytes\n",
+		   secCount, secCount * 512);
 	printf("Decode successfully, write it to file\n");
 	fp = fopen(argv[2], "wb+");
 	if(!fp)
@@ -114,7 +117,7 @@ int main(int argc, char *argv[])
 		goto deal;
 	}
 	fseek(fp, 0, SEEK_SET);
-	fwrite(plain, 0x168000, 1, fp);
+	fwrite(plain, secCount * 512 > 0 ? secCount * 512 : 0x168000, 1, fp);
 	fclose(fp);
 
 deal:
@@ -122,4 +125,5 @@ deal:
 	free(plain);
 	return 0;
 }
+
 

@@ -41,15 +41,19 @@ int main(int argc, char *argv[])
 
 	uint8_t *actualimage;
 
+	uint8_t *payload;
+
 	if(hdcopy[0] == 0xff && hdcopy[1] == 0x18)
 	{
-		printf("That is a HD-COPY 2.0 Image\n");
+		printf("That is an HD-COPY 2.0 Image\n");
 		actualimage = hdcopy + 0x0e; /* 跳过标有卷标的文件头 */
+		payload = actualimage + 2 + 168; /* 载荷段 */
 	}
 	else
 	{
-		printf("That is a HD-COPY 1.7 Image\n");
+		printf("That is an HD-COPY 1.7 Image\n");
 		actualimage = hdcopy;
+		payload = actualimage + 2 + 164;
 	}
 	/* 开始解码 */
 	int maxTrackCount = actualimage[0];
@@ -57,8 +61,6 @@ int main(int argc, char *argv[])
 
 	printf("maxTrackCount = %d, secPerTrack = %d\n", maxTrackCount, secPerTrack);
 	uint8_t *dataTrack = actualimage + 2; /* 有数据的磁道表 */
-
-	uint8_t *payload = dataTrack + 168; /* 载荷段 */
 
 	uint8_t *decode_p = plain;
 
@@ -92,14 +94,12 @@ int main(int argc, char *argv[])
 
 						for(r = 0; r < repeat; r++)
 						{
-							decode_p[0] = repeatByte;
-							decode_p ++;
+							*(decode_p++) = repeatByte;
 						}
 					}
 					else
 					{
-						decode_p[0] = payload[k];
-						decode_p ++;
+						*(decode_p++) = payload[k];
 					}
 				}
 			}
@@ -115,9 +115,9 @@ int main(int argc, char *argv[])
 	}
 	fseek(fp, 0, SEEK_SET);
 	fwrite(plain, 0x168000, 1, fp);
+	fclose(fp);
 
 deal:
-	fclose(fp);
 	free(hdcopy);
 	free(plain);
 	return 0;
